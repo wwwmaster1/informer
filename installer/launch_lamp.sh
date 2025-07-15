@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# --- LAMP Stack Installer Recipe ---
-# This script launches a new EC2 instance and installs a classic LAMP stack:
-# Linux, Apache, MariaDB (MySQL), and Python.
+# --- LAMP Stack Launcher Recipe ---
+# This script provisions a new EC2 instance and deploys a classic LAMP stack.
 
 set -e
 
@@ -10,13 +9,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 
 # Define the stack components
 INSTANCE_NAME="LAMP-Stack-Server"
-INSTALLERS=(
-    "install_apache.sh"
-    "install_mysql.sh"
-    "install_python.sh"
-)
+STACK_FILE="lamp.stack"
 
-echo "--- Starting LAMP Stack Deployment ---"
+echo "--- Starting LAMP Stack Remote Deployment ---"
 # Call the main launcher with the predefined stack
-bash "$SCRIPT_DIR/launch_ec2_and_install.sh" "$INSTANCE_NAME" "${INSTALLERS[@]}"
-echo "--- LAMP Stack Deployment Finished ---"
+bash "$SCRIPT_DIR/launch_ec2_and_install.sh" "$INSTANCE_NAME" "$STACK_FILE"
+echo "--- LAMP Stack Remote Deployment Finished ---"

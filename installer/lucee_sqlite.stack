@@ -1,0 +1,6 @@
+# --- Lucee + SQLite Stack Manifest ---
+# Defines the components for a Lucee and SQLite stack.
+
+# Installer scripts to run, in order.
+installer: install_lucee.sh
+installer: install_sqlite.sh

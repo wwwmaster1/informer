@@ -1,7 +1,0 @@
-# --- LAMP Stack Manifest ---
-# Defines the components for a Linux, Apache, MySQL, Python stack.
-
-# Installer scripts to run, in order.
-installer: install_apache.sh
-installer: install_mysql.sh
-installer: install_python.sh

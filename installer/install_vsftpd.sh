@@ -8,6 +8,7 @@ set -e
 
 # --- Helper Functions ---
 LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/vsftpd_install.log"
+SERVICE_MANIFEST_DIR="/home/$(whoami)/.gemini/services"
 
 say() {
     echo "{$1}"
@@ -40,6 +41,23 @@ sudo systemctl start vsftpd
 say "Enabling the vsftpd service to start on boot."
 log_to_file "Enabling vsftpd service."
 sudo systemctl enable vsftpd
+
+# --- Create Service Manifest ---
+say "Creating service manifest for vsftpd."
+mkdir -p "$SERVICE_MANIFEST_DIR"
+cat <<EOF > "$SERVICE_MANIFEST_DIR/vsftpd.json"
+{
+  "serviceName": "vsftpd",
+  "description": "A secure FTP server for file transfers.",
+  "accessMethod": {
+    "type": "network",
+    "protocol": "ftp",
+    "port": 21,
+    "usage": "Connect using an FTP client (e.g., FileZilla, ftp command) to the server's IP address on port 21."
+  }
+}
+EOF
+log_to_file "Service manifest created at $SERVICE_MANIFEST_DIR/vsftpd.json"
 
 say "vsftpd installation and basic hardening is complete."
 log_to_file "vsftpd installer finished successfully."

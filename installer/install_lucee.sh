@@ -8,6 +8,7 @@ set -e
 
 # --- Helper Functions ---
 LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/lucee_install.log"
+SERVICE_MANIFEST_DIR="/home/$(whoami)/.gemini/services"
 
 say() {
     echo "{$1}"
@@ -67,6 +68,23 @@ log_to_file "Lucee unattended installation finished."
 say "Ensuring the Lucee service is running."
 sudo /opt/lucee/lucee_ctl status
 log_to_file "Checked Lucee service status."
+
+# --- Create Service Manifest ---
+say "Creating service manifest for Lucee."
+mkdir -p "$SERVICE_MANIFEST_DIR"
+cat <<EOF > "$SERVICE_MANIFEST_DIR/lucee.json"
+{
+  "serviceName": "Lucee",
+  "description": "A CFML Application Server.",
+  "accessMethod": {
+    "type": "http",
+    "protocol": "http",
+    "baseUrl": "http://localhost:8888",
+    "usage": "Serves CFML applications. Access the web admin via a browser. The admin password is in the lucee_install.log file."
+  }
+}
+EOF
+log_to_file "Service manifest created at $SERVICE_MANIFEST_DIR/lucee.json"
 
 say "Lucee installation is complete. The administrator password has been saved to the log file."
 log_to_file "Lucee installation script finished successfully."

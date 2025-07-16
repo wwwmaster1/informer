@@ -8,6 +8,7 @@ set -e
 
 # --- Helper Functions ---
 LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/postgresql_install.log"
+SERVICE_MANIFEST_DIR="/home/$(whoami)/.gemini/services"
 
 say() {
     echo "{$1}"
@@ -38,6 +39,23 @@ sudo systemctl start postgresql
 say "Enabling the PostgreSQL service to start on boot."
 log_to_file "Enabling postgresql service."
 sudo systemctl enable postgresql
+
+# --- Create Service Manifest ---
+say "Creating service manifest for PostgreSQL."
+mkdir -p "$SERVICE_MANIFEST_DIR"
+cat <<EOF > "$SERVICE_MANIFEST_DIR/postgresql.json"
+{
+  "serviceName": "PostgreSQL",
+  "description": "An open-source object-relational database system.",
+  "accessMethod": {
+    "type": "network",
+    "protocol": "postgresql",
+    "port": 5432,
+    "usage": "Connect using a PostgreSQL client (e.g., psql) or library to localhost on port 5432."
+  }
+}
+EOF
+log_to_file "Service manifest created at $SERVICE_MANIFEST_DIR/postgresql.json"
 
 say "PostgreSQL installation is complete."
 log_to_file "PostgreSQL installer finished successfully."

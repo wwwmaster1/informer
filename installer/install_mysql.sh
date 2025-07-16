@@ -8,6 +8,7 @@ set -e
 
 # --- Helper Functions ---
 LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/mariadb_install.log"
+SERVICE_MANIFEST_DIR="/home/$(whoami)/.gemini/services"
 
 say() {
     echo "{$1}"
@@ -33,6 +34,23 @@ sudo systemctl start mariadb
 say "Enabling the Maria D B service to start on boot."
 log_to_file "Enabling mariadb service."
 sudo systemctl enable mariadb
+
+# --- Create Service Manifest ---
+say "Creating service manifest for Maria D B."
+mkdir -p "$SERVICE_MANIFEST_DIR"
+cat <<EOF > "$SERVICE_MANIFEST_DIR/mariadb.json"
+{
+  "serviceName": "MariaDB",
+  "description": "A relational database server, compatible with MySQL.",
+  "accessMethod": {
+    "type": "network",
+    "protocol": "mysql",
+    "port": 3306,
+    "usage": "Connect using a MySQL client or library to localhost on port 3306."
+  }
+}
+EOF
+log_to_file "Service manifest created at $SERVICE_MANIFEST_DIR/mariadb.json"
 
 say "Maria D B installation is complete."
 log_to_file "MariaDB installer finished successfully."

@@ -9,6 +9,7 @@ set -e
 # --- Helper Functions ---
 # The log file will be created in the home directory of the user running the script.
 LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/apache_install.log"
+SERVICE_MANIFEST_DIR="/home/$(whoami)/.gemini/services"
 
 say() {
     echo "{$1}"
@@ -41,6 +42,23 @@ sudo systemctl start httpd
 say "Enabling the Apache service to start on boot."
 log_to_file "Enabling httpd service."
 sudo systemctl enable httpd
+
+# --- Create Service Manifest ---
+say "Creating service manifest for Apache."
+mkdir -p "$SERVICE_MANIFEST_DIR"
+cat <<EOF > "$SERVICE_MANIFEST_DIR/apache.json"
+{
+  "serviceName": "Apache",
+  "description": "A standard HTTP web server.",
+  "accessMethod": {
+    "type": "http",
+    "protocol": "http",
+    "baseUrl": "http://localhost:80",
+    "usage": "Serves web content from /var/www/html/. Access via a web browser."
+  }
+}
+EOF
+log_to_file "Service manifest created at $SERVICE_MANIFEST_DIR/apache.json"
 
 say "Web server installation is complete."
 log_to_file "Web server installation script finished successfully."

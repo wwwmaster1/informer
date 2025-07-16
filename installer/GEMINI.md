@@ -22,6 +22,15 @@ Adherence to these conventions is critical for maintaining the project.
 
 This is the primary interface for using the toolkit.
 
+### Service Discovery
+
+*   **File:** `list_services.sh`
+*   **Purpose:** After an installation, run this script to get a machine-readable JSON list of all installed services, their ports, and access protocols.
+*   **Usage:**
+    ```bash
+    ./list_services.sh
+    ```
+
 ### Remote Provisioning (EC2)
 
 *   **File:** `launch_ec2_and_install.sh`

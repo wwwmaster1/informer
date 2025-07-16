@@ -1,0 +1,14 @@
+# --- Agentic Stack Manifest ---
+# Defines the components for a comprehensive agentic and automation server.
+
+# --- Core Dependencies ---
+installer: install_git.sh
+installer: install_nodejs.sh
+installer: install_docker.sh
+installer: install_docker_compose.sh
+
+# --- Agentic Tooling ---
+# Note: The order is important. These depend on the core tools above.
+installer: install_pm2.sh
+installer: install_playwright.sh
+installer: install_n8n.sh

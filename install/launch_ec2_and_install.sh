@@ -70,10 +70,23 @@ log_to_file "Instance ready at $PUBLIC_IP"
 # --- 4. Conditional Remote Installation ---
 if [ ${#INSTALL_ARGS[@]} -gt 0 ]; then
     say "Waiting for S S H to become available."
-    until ssh -o "StrictHostKeyChecking=no" -o "ConnectionAttempts=10" -i "$SSH_KEY_PATH" "$SSH_USERNAME@$PUBLIC_IP" exit 2>/dev/null; do
-        say "Still waiting..." && sleep 10
+    log_to_file "Attempting to establish SSH connection..."
+    local max_attempts=15
+    local attempt_num=1
+    # We add -v to get verbose output and redirect stderr (2) to our log file for debugging.
+    until ssh -v -o "StrictHostKeyChecking=no" -o "ConnectTimeout=10" -o "ConnectionAttempts=1" -i "$SSH_KEY_PATH" "$SSH_USERNAME@$PUBLIC_IP" exit >/dev/null 2>>"$LOG_FILE"; do
+        if [ $attempt_num -ge $max_attempts ]; then
+            say "Error: Could not establish an S S H connection after $max_attempts attempts."
+            log_master "CRITICAL: SSH connection timed out."
+            log_to_file "Check this log for SSH connection errors. Common issues include incorrect security group rules (port 22 must be open), or wrong local SSH key permissions (should be 400)."
+            exit 1
+        fi
+        say "Still waiting for S S H... (Attempt $attempt_num of $max_attempts)"
+        log_to_file "SSH attempt $attempt_num failed. Retrying in 10 seconds."
+        sleep 10
+        attempt_num=$((attempt_num+1))
     done
-    log_to_file "SSH is ready."
+    log_to_file "SSH connection established successfully."
 
     say "Beginning remote installation."
     log_master "Beginning remote installation on $INSTANCE_ID."
@@ -88,7 +101,7 @@ if [ ${#INSTALL_ARGS[@]} -gt 0 ]; then
     log_to_file "Using remote repository directory name: $REPO_NAME"
 
     REMOTE_PROJECT_PATH="/home/$SSH_USERNAME/$REPO_NAME"
-    REMOTE_COMMAND="cd $REMOTE_PROJECT_PATH/install && ./install_stack.sh ${INSTALL_ARGS[*]}"
+    REMOTE_COMMAND="cd $REMOTE_PROJECT_PATH/install && chmod +x install_stack.sh && ./install_stack.sh ${INSTALL_ARGS[*]}"
 
     if [ -n "$GIT_REPO_URL" ]; then
         say "Cloning repository from $GIT_REPO_URL into ~/$REPO_NAME on the remote instance."

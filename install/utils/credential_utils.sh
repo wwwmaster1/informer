@@ -60,9 +60,18 @@ ensure_ssh_key() {
     
     # If the path is set but the file doesn't exist, it's an error.
     elif [ ! -f "${SSH_KEY_PATH:-}" ]; then
-        say "Error: The S S H key was not found at the path specified in your configuration file."
+        say "Error: The S S H key specified in your ec2_setup.env file was not found at the path: $SSH_KEY_PATH"
         log_master "CRITICAL: SSH key file not found at specified path: ${SSH_KEY_PATH}"
         exit 1
+    # If the file exists, check its permissions.
+    else
+        local perms
+        perms=$(stat -c "%a" "$SSH_KEY_PATH")
+        if [[ "$perms" != "400" && "$perms" != "600" ]]; then
+            say "Warning: Your S S H key has incorrect permissions. Fixing them now to 400."
+            log_to_file "Correcting permissions for $SSH_KEY_PATH from $perms to 400."
+            chmod 400 "$SSH_KEY_PATH"
+        fi
     fi
     
     say "S S H key is valid."

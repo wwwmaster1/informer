@@ -30,7 +30,7 @@ log_to_file() {
 
 # --- Credential Validation and Generation ---
 # Source the shared credential utility script
-source "$ROOT_DIR/credential_utils.sh"
+source "$ROOT_DIR/install/utils/credential_utils.sh"
 
 
 # --- Main Execution ---

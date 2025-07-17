@@ -71,8 +71,8 @@ log_to_file "Instance ready at $PUBLIC_IP"
 if [ ${#INSTALL_ARGS[@]} -gt 0 ]; then
     say "Waiting for S S H to become available."
     log_to_file "Attempting to establish SSH connection..."
-    local max_attempts=15
-    local attempt_num=1
+    max_attempts=15
+    attempt_num=1
     # We add -v to get verbose output and redirect stderr (2) to our log file for debugging.
     until ssh -v -o "StrictHostKeyChecking=no" -o "ConnectTimeout=10" -o "ConnectionAttempts=1" -i "$SSH_KEY_PATH" "$SSH_USERNAME@$PUBLIC_IP" exit >/dev/null 2>>"$LOG_FILE"; do
         if [ $attempt_num -ge $max_attempts ]; then

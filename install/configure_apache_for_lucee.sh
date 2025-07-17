@@ -8,7 +8,10 @@ set -e
 
 # --- Helper Functions ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-LOG_FILE="$SCRIPT_DIR/apache_lucee_config.log"
+LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/../logs/apache_lucee_config.log"
+
+# Ensure log directory exists
+mkdir -p "$(dirname "$LOG_FILE")"
 
 say() {
     echo "{$1}"
@@ -19,7 +22,7 @@ log_to_file() {
 }
 
 # --- Script Body ---
-# Ensure the log directory exists before doing anything else.
+# Ensure the log directory exists before any other command is run.
 mkdir -p "$(dirname "$LOG_FILE")"
 
 say "Configuring Apache as a reverse proxy for Lucee."

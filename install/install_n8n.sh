@@ -7,10 +7,13 @@
 set -e
 
 # --- Helper Functions ---
-LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/n8n_install.log"
+LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/../logs/n8n_install.log"
 N8N_DIR="$HOME/n8n"
 # Manifests will be created relative to the script's location.
 SERVICE_MANIFEST_DIR="$(dirname "${BASH_SOURCE[0]}")/../services"
+
+# Ensure log directory exists
+mkdir -p "$(dirname "$LOG_FILE")"
 
 say() {
     echo "{$1}"

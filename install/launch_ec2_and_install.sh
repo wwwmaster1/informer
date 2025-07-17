@@ -11,10 +11,14 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 ROOT_DIR="$SCRIPT_DIR/.."
 MASTER_LOG_FILE="$ROOT_DIR/install.log"
-EC2_LOG_FILE="$ROOT_DIR/ec2_launch.log"
+EC2_LOG_FILE="$ROOT_DIR/logs/ec2_launch.log"
 LOG_FILE="$EC2_LOG_FILE"
 ENV_FILE="$ROOT_DIR/ec2_setup.env"
 ENV_EXAMPLE_FILE="$ROOT_DIR/ec2_setup.env.example"
+
+# Ensure log directory exists
+mkdir -p "$(dirname "$LOG_FILE")"
+mkdir -p "$(dirname "$MASTER_LOG_FILE")"
 
 say() {
     echo "{$1}"
@@ -53,6 +57,31 @@ else
 fi
 
 # 3. Launch EC2 Instance
+# Check if the user has provided a specific AMI ID. If not, find the latest one.
+if [[ "${EC2_AMI_ID:-}" == "ami-0c55b159cbfafe1f0" ]] || [ -z "${EC2_AMI_ID:-}" ]; then
+    say "A M I I D not specified. Finding the latest Amazon Linux 2 A M I for region $AWS_REGION."
+    log_to_file "Querying AWS for the latest Amazon Linux 2 AMI in $AWS_REGION."
+    
+    LATEST_AMI=$(aws ec2 describe-images \
+        --owners amazon \
+        --filters "Name=name,Values=amzn2-ami-hvm-*-x86_64-gp2" "Name=state,Values=available" \
+        --query 'Images | sort_by(@, &CreationDate) | [-1].ImageId' \
+        --region "$AWS_REGION" \
+        --output text)
+
+    if [ -z "$LATEST_AMI" ]; then
+        say "Error: Could not automatically find the latest Amazon Linux 2 A M I."
+        log_master "CRITICAL: Failed to query for latest AMI."
+        exit 1
+    fi
+    EC2_AMI_ID="$LATEST_AMI"
+    say "Found latest A M I: $EC2_AMI_ID"
+    log_to_file "Automatically found latest AMI: $EC2_AMI_ID"
+else
+    say "Using user-specified A M I I D: $EC2_AMI_ID"
+    log_to_file "Using user-specified AMI ID: $EC2_AMI_ID"
+fi
+
 say "Requesting E C 2 instance launch for '$INSTANCE_NAME'."
 log_to_file "Requesting EC2 instance launch in region $AWS_REGION."
 INSTANCE_ID=$(aws ec2 run-instances --region "$AWS_REGION" --image-id "$EC2_AMI_ID" --instance-type "${EC2_INSTANCE_TYPE:-t2.micro}" --key-name "$EC2_KEY_NAME" --security-group-ids "$EC2_SECURITY_GROUP_ID" --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$INSTANCE_NAME}]" --query 'Instances[0].InstanceId' --output text)

@@ -7,7 +7,10 @@
 set -e
 
 # --- Helper Functions ---
-LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/pipecat_install.log"
+LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/../logs/pipecat_install.log"
+
+# Ensure log directory exists
+mkdir -p "$(dirname "$LOG_FILE")"
 
 say() {
     echo "{$1}"

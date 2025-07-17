@@ -7,10 +7,14 @@
 set -e
 
 # --- Helper Functions ---
-LOG_FILE="$SCRIPT_DIR/nodejs_install.log"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+LOG_FILE="$SCRIPT_DIR/../logs/nodejs_install.log"
+
+# Ensure log directory exists
+mkdir -p "$(dirname "$LOG_FILE")"
 
 say() {
-    echo "$1"
+    echo "{$1}"
 }
 
 log_to_file() {

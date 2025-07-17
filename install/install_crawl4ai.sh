@@ -7,7 +7,10 @@
 set -e
 
 # --- Helper Functions ---
-LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/crawl4ai_install.log"
+LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/../logs/crawl4ai_install.log"
+
+# Ensure log directory exists
+mkdir -p "$(dirname "$LOG_FILE")"
 
 say() {
     echo "{$1}"

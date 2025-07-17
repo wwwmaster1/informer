@@ -9,9 +9,14 @@ set -e
 
 # --- Helper Functions ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-MASTER_LOG_FILE="$SCRIPT_DIR/install.log"
-LOCAL_INSTALL_LOG_FILE="$SCRIPT_DIR/local_stack_install.log"
+ROOT_DIR="$SCRIPT_DIR/.."
+MASTER_LOG_FILE="$ROOT_DIR/install.log"
+LOCAL_INSTALL_LOG_FILE="$ROOT_DIR/logs/local_stack_install.log"
 LOG_FILE="$LOCAL_INSTALL_LOG_FILE"
+
+# Ensure log directory exists
+mkdir -p "$(dirname "$LOG_FILE")"
+mkdir -p "$(dirname "$MASTER_LOG_FILE")"
 
 say() {
     echo "{$1}"
@@ -55,11 +60,11 @@ for ARG in "${ARGUMENTS[@]}"; do
             say "Warning: Stack file '$ARG' not found. Skipping."
             log_to_file "Stack file not found: $STACK_FILE. Skipping."
         fi
-    elif [[ "$ARG" == *.sh ]]; then
+    elif [[ "$ARG" == install_*.sh ]]; then
         INSTALLER_SEQUENCE+=("$ARG")
     else
-        say "Warning: Argument '$ARG' is not a valid .sh or .stack file. Skipping."
-        log_to_file "Invalid argument skipped: $ARG"
+        say "Warning: An invalid argument was provided and will be skipped."
+        log_to_file "Invalid argument skipped: '$ARG'. It is not a valid installer or stack file."
     fi
 done
 

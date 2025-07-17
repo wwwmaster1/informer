@@ -107,7 +107,11 @@ validate_and_prepare_deployment() {
         say "Configuration file not found. Creating one from the example."
         cp "$ENV_EXAMPLE_FILE" "$ENV_FILE"
     fi
+    
+    # Source the environment file, exporting all its variables to the shell.
+    set -a
     source "$ENV_FILE"
+    set +a
 
     ensure_aws_auth
     ensure_ssh_key

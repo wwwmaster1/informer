@@ -11,10 +11,15 @@ set -e
 
 # --- Helper Functions ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-MASTER_LOG_FILE="$SCRIPT_DIR/install.log"
-GEMINI_LOG_FILE="$SCRIPT_DIR/gemini_install.log"
-LOG_FILE="$GEMINI_LOG_FILE" # For existing log_to_file calls
-ENV_FILE="$SCRIPT_DIR/gemini.env"
+ROOT_DIR="$SCRIPT_DIR/.."
+MASTER_LOG_FILE="$ROOT_DIR/install.log"
+GEMINI_LOG_FILE="$ROOT_DIR/logs/gemini_install.log"
+LOG_FILE="$GEMINI_LOG_FILE"
+ENV_FILE="$ROOT_DIR/gemini.env"
+
+# Ensure log directory exists
+mkdir -p "$(dirname "$LOG_FILE")"
+mkdir -p "$(dirname "$MASTER_LOG_FILE")"
 
 say() {
     echo "{$1}"

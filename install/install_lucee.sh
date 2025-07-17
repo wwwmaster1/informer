@@ -10,8 +10,11 @@ set -e
 # --- Helper Functions ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 ROOT_DIR="$SCRIPT_DIR/.."
-LOG_FILE="$SCRIPT_DIR/lucee_install.log"
+LOG_FILE="$SCRIPT_DIR/../logs/lucee_install.log"
 SERVICE_MANIFEST_DIR="$SCRIPT_DIR/../services"
+
+# Ensure log directory exists
+mkdir -p "$(dirname "$LOG_FILE")"
 
 say() {
     echo "{$1}"
@@ -22,13 +25,12 @@ log_to_file() {
 }
 
 # --- Source Utilities ---
+# Ensure log and service directories exist before any other command is run.
+mkdir -p "$(dirname "$LOG_FILE")"
+mkdir -p "$SERVICE_MANIFEST_DIR"
 source "$SCRIPT_DIR/utils/lucee_utils.sh"
 
 # --- Script Body ---
-# Ensure log and service directories exist before doing anything else.
-mkdir -p "$(dirname "$LOG_FILE")"
-mkdir -p "$SERVICE_MANIFEST_DIR"
-
 say "Starting Lucee installation."
 log_to_file "Lucee installation script started."
 

@@ -8,8 +8,12 @@ set -e
 
 # --- Helper Functions ---
 # The log file will be created in the home directory of the user running the script.
-LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/apache_install.log"
-SERVICE_MANIFEST_DIR="$(dirname "${BASH_SOURCE[0]}")/../services"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+LOG_FILE="$SCRIPT_DIR/../logs/apache_install.log"
+SERVICE_MANIFEST_DIR="$SCRIPT_DIR/../services"
+
+# Ensure log directory exists
+mkdir -p "$(dirname "$LOG_FILE")"
 
 say() {
     echo "{$1}"

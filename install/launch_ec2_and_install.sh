@@ -104,7 +104,7 @@ if [ ${#INSTALL_ARGS[@]} -gt 0 ]; then
     REMOTE_COMMAND="cd $REMOTE_PROJECT_PATH/install && chmod +x install_stack.sh && ./install_stack.sh ${INSTALL_ARGS[*]}"
 
     if [ -n "$GIT_REPO_URL" ]; then
-        say "Cloning repository from $GIT_REPO_URL into ~/$REPO_NAME on the remote instance."
+        say "Cloning repository on remote instance."
         log_master "Cloning remote repo: $GIT_REPO_URL"
         ssh -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" "$SSH_USERNAME@$PUBLIC_IP" "sudo yum install -y git && git clone --branch ${GIT_BRANCH:-main} ${GIT_REPO_URL} ${REMOTE_PROJECT_PATH} && ${REMOTE_COMMAND}"
     else

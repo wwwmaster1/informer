@@ -42,13 +42,24 @@ log_to_file "Script started."
 validate_and_prepare_deployment
 
 # 2. Parse Arguments
-if [ "$#" -lt 2 ]; then
-    say "Error: You must provide an instance name and at least one installer or stack file."
+# If the first argument is not provided, generate a default instance name.
+if [ -z "$1" ]; then
+    say "No instance name provided. Generating a default name."
+    INSTANCE_NAME="deployment-server-$(date +%s)"
+    log_to_file "Generated instance name: $INSTANCE_NAME"
+    INSTALL_ARGS=("$@")
+else
+    INSTANCE_NAME="$1"
+    shift
+    INSTALL_ARGS=("$@")
+fi
+
+# After handling the instance name, check if any installer arguments remain.
+if [ ${#INSTALL_ARGS[@]} -eq 0 ]; then
+    say "Error: You must provide at least one installer script (.sh) or stack file (.stack) to run."
+    log_master "CRITICAL: No installers provided."
     exit 1
 fi
-INSTANCE_NAME="$1"
-shift
-INSTALL_ARGS=("$@")
 
 # 3. Launch EC2 Instance
 say "Requesting E C 2 instance launch for '$INSTANCE_NAME'."

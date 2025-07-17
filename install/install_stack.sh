@@ -47,7 +47,7 @@ for ARG in "${ARGUMENTS[@]}"; do
     if [[ "$ARG" == *.stack ]]; then
         log_to_file "Found stack file: $ARG. Reading for installers."
         STACK_FILE="$SCRIPT_DIR/$ARG"
-        if [ -f "$STACK_FILE" ]; a
+        if [ -f "$STACK_FILE" ]; then
             while IFS= read -r SCRIPT_NAME; do
                 INSTALLER_SEQUENCE+=("$SCRIPT_NAME")
             done < <(grep -E '^installer:' "$STACK_FILE" | cut -d' ' -f2)

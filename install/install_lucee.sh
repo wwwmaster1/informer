@@ -54,7 +54,7 @@ log_to_file "Starting unattended Lucee installation using environment variable f
 # The installer will automatically pick up the LUCEE_ADMIN_PASSWORD variable.
 sudo ./lucee-installer.run \
   --mode unattended \
-  --password "$LUCEE_ADMIN_PASSWORD" \
+  --adminPassword "$LUCEE_ADMIN_PASSWORD" \
   --installconn false \
   --startatboot true
 log_to_file "Lucee unattended installation finished."

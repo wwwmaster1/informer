@@ -2,13 +2,14 @@
 
 # --- Lucee Installation Script ---
 # This script is executed on a new EC2 instance to install the Lucee CFML Engine.
-# This installer is self-contained and includes its own Java/Tomcat runtime.
+# It uses an environment variable for the admin password.
 
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
 # --- Helper Functions ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+ROOT_DIR="$SCRIPT_DIR/.."
 LOG_FILE="$SCRIPT_DIR/lucee_install.log"
 SERVICE_MANIFEST_DIR="$SCRIPT_DIR/../services"
 
@@ -17,8 +18,11 @@ say() {
 }
 
 log_to_file() {
-    echo "$(date +%s): $1" >>"$LOG_FILE"
+    echo "$(date +%s): $1" >>"$LOG_GLE"
 }
+
+# --- Source Utilities ---
+source "$SCRIPT_DIR/utils/lucee_utils.sh"
 
 # --- Script Body ---
 # Ensure log and service directories exist before doing anything else.
@@ -28,7 +32,12 @@ mkdir -p "$SERVICE_MANIFEST_DIR"
 say "Starting Lucee installation."
 log_to_file "Lucee installation script started."
 
-# The Lucee installer is self-contained and does not require a separate Java installation.
+# 1. Validate or generate the Lucee admin password
+validate_or_generate_lucee_password
+log_to_file "Lucee password has been set as an environment variable."
+echo "IMPORTANT: The Lucee administrator password is: $LUCEE_ADMIN_PASSWORD" >> "$LOG_FILE"
+
+# 2. Download and Install Lucee
 say "Downloading the latest Lucee installer. This may take a moment."
 log_to_file "Downloading Lucee installer."
 curl -L -o lucee-installer.run "https://cdn.lucee.org/lucee-6.2.1.122-linux-x64-installer.run"
@@ -38,17 +47,11 @@ say "Making the Lucee installer executable."
 chmod +x lucee-installer.run
 log_to_file "Set executable permission on Lucee installer."
 
-# Generate a random password for the Lucee server admin
-LUCEE_PASSWORD=$(openssl rand -base64 12)
-say "A new random password has been generated for the Lucee administrator."
-log_to_file "Generated new Lucee admin password."
-echo "IMPORTANT: The Lucee administrator password is: $LUCEE_PASSWORD" >> "$LOG_FILE"
-
 say "Running the Lucee installer in unattended mode."
-log_to_file "Starting unattended Lucee installation."
+log_to_file "Starting unattended Lucee installation using environment variable for password."
+# The installer will automatically pick up the LUCEE_ADMIN_PASSWORD variable.
 sudo ./lucee-installer.run \
   --mode unattended \
-  --luceepassword "$LUCEE_PASSWORD" \
   --installconn false \
   --startatboot true
 log_to_file "Lucee unattended installation finished."
@@ -57,7 +60,7 @@ say "Ensuring the Lucee service is running."
 sudo /opt/lucee/lucee_ctl status
 log_to_file "Checked Lucee service status."
 
-# --- Create Service Manifest ---
+# 3. Create Service Manifest
 say "Creating service manifest for Lucee."
 cat <<EOF > "$SERVICE_MANIFEST_DIR/lucee.json"
 {

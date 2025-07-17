@@ -2,7 +2,7 @@
 
 # --- Universal EC2 Stack Launcher ---
 # Validates environment, generates credentials if needed, provisions an EC2
-# instance, and installs a dynamic software stack.
+# instance, and optionally installs a dynamic software stack.
 
 # Exit immediately if a command exits with a non-zero status.
 set -e
@@ -29,7 +29,6 @@ log_to_file() {
 }
 
 # --- Credential Validation and Generation ---
-# Source the shared credential utility script
 source "$ROOT_DIR/install/utils/credential_utils.sh"
 
 
@@ -42,7 +41,6 @@ log_to_file "Script started."
 validate_and_prepare_deployment
 
 # 2. Parse Arguments
-# If the first argument is not provided, generate a default instance name.
 if [ -z "$1" ]; then
     say "No instance name provided. Generating a default name."
     INSTANCE_NAME="deployment-server-$(date +%s)"
@@ -52,13 +50,6 @@ else
     INSTANCE_NAME="$1"
     shift
     INSTALL_ARGS=("$@")
-fi
-
-# After handling the instance name, check if any installer arguments remain.
-if [ ${#INSTALL_ARGS[@]} -eq 0 ]; then
-    say "Error: You must provide at least one installer script (.sh) or stack file (.stack) to run."
-    log_master "CRITICAL: No installers provided."
-    exit 1
 fi
 
 # 3. Launch EC2 Instance
@@ -76,39 +67,43 @@ PUBLIC_IP=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --region "$
 say "Instance is ready at Public I P: $PUBLIC_IP"
 log_to_file "Instance ready at $PUBLIC_IP"
 
-say "Waiting for S S H to become available."
-until ssh -o "StrictHostKeyChecking=no" -o "ConnectionAttempts=10" -i "$SSH_KEY_PATH" "$SSH_USERNAME@$PUBLIC_IP" exit 2>/dev/null; do
-    say "Still waiting..." && sleep 10
-done
-log_to_file "SSH is ready."
+# --- 4. Conditional Remote Installation ---
+if [ ${#INSTALL_ARGS[@]} -gt 0 ]; then
+    say "Waiting for S S H to become available."
+    until ssh -o "StrictHostKeyChecking=no" -o "ConnectionAttempts=10" -i "$SSH_KEY_PATH" "$SSH_USERNAME@$PUBLIC_IP" exit 2>/dev/null; do
+        say "Still waiting..." && sleep 10
+    done
+    log_to_file "SSH is ready."
 
-# --- 4. Remote Execution (New Dynamic Logic) ---
-say "Beginning remote installation."
-log_master "Beginning remote installation on $INSTANCE_ID."
+    say "Beginning remote installation."
+    log_master "Beginning remote installation on $INSTANCE_ID."
 
-# Determine the repository directory name
-if [ -n "$REPO_DIR_NAME" ]; then
-    REPO_NAME="$REPO_DIR_NAME"
-elif [ -n "$GIT_REPO_URL" ]; then
-    REPO_NAME=$(basename "$GIT_REPO_URL" .git)
+    if [ -n "$REPO_DIR_NAME" ]; then
+        REPO_NAME="$REPO_DIR_NAME"
+    elif [ -n "$GIT_REPO_URL" ]; then
+        REPO_NAME=$(basename "$GIT_REPO_URL" .git)
+    else
+        REPO_NAME="informer" # Default for local file transfer
+    fi
+    log_to_file "Using remote repository directory name: $REPO_NAME"
+
+    REMOTE_PROJECT_PATH="/home/$SSH_USERNAME/$REPO_NAME"
+    REMOTE_COMMAND="cd $REMOTE_PROJECT_PATH/install && ./install_stack.sh ${INSTALL_ARGS[*]}"
+
+    if [ -n "$GIT_REPO_URL" ]; then
+        say "Cloning repository from $GIT_REPO_URL into ~/$REPO_NAME on the remote instance."
+        log_master "Cloning remote repo: $GIT_REPO_URL"
+        ssh -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" "$SSH_USERNAME@$PUBLIC_IP" "sudo yum install -y git && git clone --branch ${GIT_BRANCH:-main} ${GIT_REPO_URL} ${REMOTE_PROJECT_PATH} && ${REMOTE_COMMAND}"
+    else
+        say "No Git repository specified. Copying local installers to ~/$REPO_NAME instead."
+        log_master "No Git repo specified. Using local file transfer."
+        ssh -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" "$SSH_USERNAME@$PUBLIC_IP" "mkdir -p $REMOTE_PROJECT_PATH/install"
+        scp -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" -r "$SCRIPT_DIR"/* "$SSH_USERNAME@$PUBLIC_IP:$REMOTE_PROJECT_PATH/install/"
+        ssh -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" "$SSH_USERNAME@$PUBLIC_IP" "$REMOTE_COMMAND"
+    fi
 else
-    REPO_NAME="informer" # Default for local file transfer
-fi
-log_to_file "Using remote repository directory name: $REPO_NAME"
-
-REMOTE_PROJECT_PATH="/home/$SSH_USERNAME/$REPO_NAME"
-REMOTE_COMMAND="cd $REMOTE_PROJECT_PATH/install && ./install_stack.sh ${INSTALL_ARGS[*]}"
-
-if [ -n "$GIT_REPO_URL" ]; then
-    say "Cloning repository from $GIT_REPO_URL into ~/$REPO_NAME on the remote instance."
-    log_master "Cloning remote repo: $GIT_REPO_URL"
-    ssh -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" "$SSH_USERNAME@$PUBLIC_IP" "sudo yum install -y git && git clone --branch ${GIT_BRANCH:-main} ${GIT_REPO_URL} ${REMOTE_PROJECT_PATH} && ${REMOTE_COMMAND}"
-else
-    say "No Git repository specified. Copying local installers to ~/$REPO_NAME instead."
-    log_master "No Git repo specified. Using local file transfer."
-    ssh -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" "$SSH_USERNAME@$PUBLIC_IP" "mkdir -p $REMOTE_PROJECT_PATH/install"
-    scp -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" -r "$SCRIPT_DIR"/* "$SSH_USERNAME@$PUBLIC_IP:$REMOTE_PROJECT_PATH/install/"
-    ssh -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" "$SSH_USERNAME@$PUBLIC_IP" "$REMOTE_COMMAND"
+    say "No installer scripts were provided. Provisioning a bare instance."
+    log_master "No installers provided. Skipping installation."
 fi
 
 say "Orchestration Complete."

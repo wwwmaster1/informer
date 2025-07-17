@@ -8,7 +8,8 @@ This is a modular toolkit for provisioning new servers (locally or on EC2) and i
 
 ## 2. Core Philosophy & Conventions
 
-*   **Directory Structure:** All installers, stack manifests, and launchers are located in the `/install` directory. The root directory contains this manual, primary configuration files, and shared utility scripts like `credential_utils.sh`.
+*   **Directory Structure:** All installers, stack manifests, and launchers are located in the `/install` directory. Shared helper scripts are in `/install/utils`. The root directory contains this manual and primary configuration files.
+*   **Configuration (`.env` files):** All secrets and environment-specific variables (API keys, key paths, etc.) must be stored in dedicated `.env` files (e.g., `gemini.env`, `ec2_setup.env`, `lucee.env`). Use the `.env.example` files as templates.
 *   **Modularity:** Each script in `/install` should do one job.
 *   **Logging:** A two-tier system. A master `install.log` in the root provides a high-level timeline. Detailed logs for each component are created in the `/install` directory on the target machine.
 *   **Service Discovery:** After installation, run `./list_services.sh` to get a machine-readable JSON list of all installed services, their ports, and access protocols. The script is located in the project root.

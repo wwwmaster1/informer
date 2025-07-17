@@ -60,8 +60,8 @@ ensure_ssh_key() {
     
     # If the path is set but the file doesn't exist, it's an error.
     elif [ ! -f "${SSH_KEY_PATH:-}" ]; then
-        say "Error: The S S H key specified in your ec2_setup.env file was not found at the path: $SSH_KEY_PATH"
-        log_master "CRITICAL: SSH key file not found at specified path."
+        say "Error: The S S H key was not found at the path specified in your configuration file."
+        log_master "CRITICAL: SSH key file not found at specified path: ${SSH_KEY_PATH}"
         exit 1
     fi
     

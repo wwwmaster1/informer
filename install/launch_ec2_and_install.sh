@@ -106,7 +106,28 @@ else
     log_master "No installers provided. Skipping installation."
 fi
 
+# --- 5. Final Success Message ---
 say "Orchestration Complete."
 log_master "Finished."
 log_to_file "Script finished successfully."
-say "Your new server, $INSTANCE_NAME, is running at H T T P colon slash slash $PUBLIC_IP"
+
+# Check if a web server was part of the installation to provide an accurate final message.
+WEB_SERVER_INSTALLED=false
+for ARG in "${INSTALL_ARGS[@]}"; do
+    if [[ "$ARG" == "install_apache.sh" || "$ARG" == "install_nginx.sh" || "$ARG" == "install_lucee.sh" ]]; then
+        WEB_SERVER_INSTALLED=true
+        break
+    elif [[ "$ARG" == *.stack ]]; then
+        STACK_FILE="$SCRIPT_DIR/$ARG"
+        if [ -f "$STACK_FILE" ] && grep -q -E "install_apache.sh|install_nginx.sh|install_lucee.sh" "$STACK_FILE"; then
+            WEB_SERVER_INSTALLED=true
+            break
+        fi
+    fi
+done
+
+if [ "$WEB_SERVER_INSTALLED" = true ]; then
+    say "Your new server, $INSTANCE_NAME, is running at H T T P colon slash slash $PUBLIC_IP"
+else
+    say "Your new server, $INSTANCE_NAME, is running at I P address $PUBLIC_IP"
+fi

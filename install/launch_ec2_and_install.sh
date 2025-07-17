@@ -39,7 +39,7 @@ say "Loading configuration."
 log_to_file "Script started."
 
 # 1. Validate or Generate Credentials
-validate_or_generate_credentials
+validate_and_prepare_deployment
 
 # 2. Parse Arguments
 if [ "$#" -lt 2 ]; then

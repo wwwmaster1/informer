@@ -18,7 +18,7 @@ say() {
 }
 
 log_to_file() {
-    echo "$(date +%s): $1" >>"$LOG_GLE"
+    echo "$(date +%s): $1" >>"$LOG_FILE"
 }
 
 # --- Source Utilities ---

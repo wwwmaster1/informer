@@ -1,0 +1,12 @@
+# --- Lucee Web Stack Manifest ---
+# Defines the components for a production-ready Lucee server using
+# Apache as a reverse proxy.
+
+# 1. Install the web server first.
+installer: install_apache.sh
+
+# 2. Install the Lucee application server.
+installer: install_lucee.sh
+
+# 3. Configure Apache to serve Lucee.
+installer: configure_apache_for_lucee.sh

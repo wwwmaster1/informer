@@ -51,7 +51,6 @@ shift
 INSTALL_ARGS=("$@")
 
 # 3. Launch EC2 Instance
-# (The rest of the script remains the same as the previous version)
 say "Requesting E C 2 instance launch for '$INSTANCE_NAME'."
 log_to_file "Requesting EC2 instance launch in region $AWS_REGION."
 INSTANCE_ID=$(aws ec2 run-instances --region "$AWS_REGION" --image-id "$EC2_AMI_ID" --instance-type "${EC2_INSTANCE_TYPE:-t2.micro}" --key-name "$EC2_KEY_NAME" --security-group-ids "$EC2_SECURITY_GROUP_ID" --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$INSTANCE_NAME}]" --query 'Instances[0].InstanceId' --output text)
@@ -72,19 +71,32 @@ until ssh -o "StrictHostKeyChecking=no" -o "ConnectionAttempts=10" -i "$SSH_KEY_
 done
 log_to_file "SSH is ready."
 
+# --- 4. Remote Execution (New Dynamic Logic) ---
 say "Beginning remote installation."
 log_master "Beginning remote installation on $INSTANCE_ID."
-REMOTE_COMMAND="cd /home/$SSH_USERNAME/gemini/install && ./install_stack.sh ${INSTALL_ARGS[*]}"
+
+# Determine the repository directory name
+if [ -n "$REPO_DIR_NAME" ]; then
+    REPO_NAME="$REPO_DIR_NAME"
+elif [ -n "$GIT_REPO_URL" ]; then
+    REPO_NAME=$(basename "$GIT_REPO_URL" .git)
+else
+    REPO_NAME="informer" # Default for local file transfer
+fi
+log_to_file "Using remote repository directory name: $REPO_NAME"
+
+REMOTE_PROJECT_PATH="/home/$SSH_USERNAME/$REPO_NAME"
+REMOTE_COMMAND="cd $REMOTE_PROJECT_PATH/install && ./install_stack.sh ${INSTALL_ARGS[*]}"
 
 if [ -n "$GIT_REPO_URL" ]; then
-    say "Cloning repository from $GIT_REPO_URL onto the remote instance."
+    say "Cloning repository from $GIT_REPO_URL into ~/$REPO_NAME on the remote instance."
     log_master "Cloning remote repo: $GIT_REPO_URL"
-    ssh -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" "$SSH_USERNAME@$PUBLIC_IP" "sudo yum install -y git && git clone --branch ${GIT_BRANCH:-main} ${GIT_REPO_URL} /home/${SSH_USERNAME}/gemini && ${REMOTE_COMMAND}"
+    ssh -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" "$SSH_USERNAME@$PUBLIC_IP" "sudo yum install -y git && git clone --branch ${GIT_BRANCH:-main} ${GIT_REPO_URL} ${REMOTE_PROJECT_PATH} && ${REMOTE_COMMAND}"
 else
-    say "No Git repository specified. Copying local installers instead."
+    say "No Git repository specified. Copying local installers to ~/$REPO_NAME instead."
     log_master "No Git repo specified. Using local file transfer."
-    ssh -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" "$SSH_USERNAME@$PUBLIC_IP" "mkdir -p /home/$SSH_USERNAME/gemini/install"
-    scp -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" -r "$SCRIPT_DIR"/* "$SSH_USERNAME@$PUBLIC_IP:/home/$SSH_USERNAME/gemini/install/"
+    ssh -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" "$SSH_USERNAME@$PUBLIC_IP" "mkdir -p $REMOTE_PROJECT_PATH/install"
+    scp -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" -r "$SCRIPT_DIR"/* "$SSH_USERNAME@$PUBLIC_IP:$REMOTE_PROJECT_PATH/install/"
     ssh -i "$SSH_KEY_PATH" -o "StrictHostKeyChecking=no" "$SSH_USERNAME@$PUBLIC_IP" "$REMOTE_COMMAND"
 fi
 

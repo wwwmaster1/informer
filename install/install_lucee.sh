@@ -8,8 +8,9 @@
 set -e
 
 # --- Helper Functions ---
-LOG_FILE="$(dirname "${BASH_SOURCE[0]}")"/lucee_install.log"
-SERVICE_MANIFEST_DIR="$(dirname "${BASH_SOURCE[0]}")"/../services"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+LOG_FILE="$SCRIPT_DIR/lucee_install.log"
+SERVICE_MANIFEST_DIR="$SCRIPT_DIR/../services"
 
 say() {
     echo "{$1}"
@@ -20,6 +21,10 @@ log_to_file() {
 }
 
 # --- Script Body ---
+# Ensure log and service directories exist before doing anything else.
+mkdir -p "$(dirname "$LOG_FILE")"
+mkdir -p "$SERVICE_MANIFEST_DIR"
+
 say "Starting Lucee installation."
 log_to_file "Lucee installation script started."
 
@@ -54,7 +59,6 @@ log_to_file "Checked Lucee service status."
 
 # --- Create Service Manifest ---
 say "Creating service manifest for Lucee."
-mkdir -p "$SERVICE_MANIFEST_DIR"
 cat <<EOF > "$SERVICE_MANIFEST_DIR/lucee.json"
 {
   "serviceName": "Lucee",
